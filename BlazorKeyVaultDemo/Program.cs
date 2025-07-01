@@ -32,9 +32,15 @@ namespace BlazorKeyVaultDemo
             //Different way of implementing
             //var keyVaultService2 = new KeyVaultService2(builder.Configuration);
             //string clientSecret2 = keyVaultService.GetSecretAsync("AzureAd--ClientSecret").GetAwaiter().GetResult();
+
             //builder.Services.AddSingleton<KeyVaultService>();
-            
-            builder.Services.AddSingleton<KeyVaultService>();
+
+            builder.Services.AddSingleton(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
+                return new KeyVaultService3(keyVaultUrl, logger);
+            });
+
             var initialScopes = builder.Configuration.GetValue<string>("DownstreamApi:Scopes")?.Split(' ');
 
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
