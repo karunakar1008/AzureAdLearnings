@@ -1,0 +1,42 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+
+<button id="showProfileButton" @onclick="ShowCard" @onclick:stopPropagation>Show Profile</button>
+
+@if (isProfileVisible)
+{
+    <ProfileCard />
+}
+
+@code {
+    private bool isProfileVisible = false;
+
+    private void ShowCard()
+    {
+        isProfileVisible = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("registerClickHandler", DotNetObjectReference.Create(this));
+        }
+    }
+
+    [Inject]
+    private IJSRuntime JS { get; set; }
+
+    [JSInvokable]
+    public void HideProfileCard()
+    {
+        if (isProfileVisible)
+        {
+            isProfileVisible = false;
+            StateHasChanged();
+        }
+    }
+}

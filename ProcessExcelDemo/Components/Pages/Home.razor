@@ -1,0 +1,100 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+<h3>Excel Processor</h3>
+
+<InputFile OnChange="OnFileSelected" />
+<br />
+<br />
+
+<button @onclick="StartProcessing" disabled="@(!CanStart)">Start Process</button>
+<button @onclick="StopProcessing" disabled="@(!isProcessing)">Stop</button>
+
+<p>@statusMessage</p>
+
+@code {
+    private IBrowserFile? selectedFile;
+    private byte[]? fileData;
+
+    private bool isProcessing = false;
+    private CancellationTokenSource? cts;
+
+    private string statusMessage = "Please select an Excel file.";
+
+    private bool CanStart => selectedFile != null && !isProcessing;
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+
+        using var stream = selectedFile.OpenReadStream(long.MaxValue); // Set max size as needed
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        fileData = ms.ToArray();
+
+        statusMessage = $"Selected file: {selectedFile.Name}";
+    }
+
+    private async Task StartProcessing()
+    {
+        if (isProcessing || fileData == null)
+            return;
+
+        isProcessing = true;
+        cts = new CancellationTokenSource();
+        statusMessage = "Processing started...";
+
+        try
+        {
+            await Task.Run(() => ProcessExcelData(fileData, cts.Token));
+            if (!cts.Token.IsCancellationRequested)
+            {
+                statusMessage = "Processing completed successfully!";
+            }
+            else
+            {
+                statusMessage = "Processing was cancelled.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error during processing: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            cts.Dispose();
+            cts = null;
+            StateHasChanged();
+        }
+    }
+
+    private void StopProcessing()
+    {
+        if (isProcessing && cts != null)
+        {
+            cts.Cancel();
+            statusMessage = "Stopping process...";
+        }
+    }
+
+    // Simulate processing Excel data
+    private void ProcessExcelData(byte[] data, CancellationToken token)
+    {
+        // Example: parse Excel and process row-by-row
+
+        int totalRows = 1000; // Suppose 1000 rows to process
+
+        for (int i = 0; i < totalRows; i++)
+        {
+            token.ThrowIfCancellationRequested();
+
+            // Simulate row processing delay
+            Thread.Sleep(100);
+
+            // TODO: Implement actual Excel row processing logic here
+        }
+    }
+}

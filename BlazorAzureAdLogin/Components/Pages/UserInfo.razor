@@ -1,0 +1,54 @@
+﻿@page "/userinfo"
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<RoleGuard UserRoles="Admin,AppUser">
+
+    <h3>User Information</h3>
+
+    @if (user != null)
+    {
+        <p>Mail id : @user.Identity.Name</p>
+    }
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">User Email</th>
+                <th scope="col">Claims</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">1</th>
+                <td>@user?.Identity?.Name</td>
+                <td>@RolesAdded</td>
+            </tr>
+           
+        </tbody>
+    </table>
+    
+</RoleGuard>
+
+
+@code {
+    private string UserInformation = "";    
+    private ClaimsPrincipal? user;
+    private string RolesAdded = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            var roles = user.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+            RolesAdded = String.Join(",", roles);
+        }
+    }
+}
+

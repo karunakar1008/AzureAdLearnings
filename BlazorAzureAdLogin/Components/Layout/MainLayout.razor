@@ -1,0 +1,57 @@
+﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 top-nav flex">
+            <div class="flex-item">
+                @if (user?.Identity?.IsAuthenticated == true)
+                {
+                    <a href="/admin">Admin Page</a>
+                    <a href="/user">User Page</a>
+                }
+            </div>
+
+            <div class="flex-item">
+                @if (user?.Identity?.IsAuthenticated == false)
+                {
+                    <a href="MicrosoftIdentity/Account/SignIn">Log In</a>
+                }
+                else
+                {
+                    <ProfileCard @rendermode=RenderMode.InteractiveServer />
+                }
+            </div>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+@code{
+    private ClaimsPrincipal? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            user = authState.User;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

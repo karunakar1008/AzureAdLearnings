@@ -1,0 +1,39 @@
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+
+@if (_isAuthorized)
+{
+    @ChildContent
+}
+
+@code {
+
+    [Parameter]
+    public string UserRoles { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _isAuthorized = false;
+
+    private ClaimsPrincipal? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+        var roles = UserRoles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (user.Identity.IsAuthenticated && roles.Any(role => user.IsInRole(role)))
+        {
+            _isAuthorized = true;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/unauthorized");
+        }
+    }
+}
+

@@ -1,0 +1,95 @@
+﻿@page "/profile"
+@using Microsoft.Graph.Models
+@attribute [Authorize(Roles ="Admin")]
+@inject GraphServiceClient GraphServiceClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h1>MS Graph Profile</h1>
+@if (user != null)
+{
+	<table class="table table-striped table-condensed" style="font-family: monospace">
+		<tr>
+			<td>Photo</td>
+			<td>
+				@{
+					if (photo != null)
+					{
+						<img style="margin: 5px 0; width: 50px;height: 50px" src="data:image/jpeg;base64, @photo" class="img-profile" />
+					}
+					else
+					{
+						<h3>NO PHOTO</h3>
+						<p>Check user profile in Azure Active Directory to add a photo.</p>
+					}
+				}
+			</td>
+		</tr>
+		@{
+			var properties = user.GetType().GetProperties();
+			foreach (var child in properties)
+			{
+				object value = child.GetValue(user);
+				string stringRepresentation;
+				if (!(value is string) && value is IEnumerable<string>)
+				{
+					stringRepresentation = "["
+					+ string.Join(", ", (value as IEnumerable<string>).OfType<object>().Select(c => c.ToString()))
+					+ "]";
+				}
+				else
+				{
+					stringRepresentation = value?.ToString();
+				}
+
+				<tr>
+					<td> @child.Name </td>
+					<td> @stringRepresentation </td>
+				</tr>
+			}
+		}
+	</table>
+}
+
+@code {
+
+	private User? user;
+	private string? photo;
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			user = await GraphServiceClient.Me.GetAsync();
+			var photoStream = await GraphServiceClient.Me.Photo.Content.GetAsync();
+			using var ms = new MemoryStream();
+			await photoStream.CopyToAsync(ms);
+			var byteArray = ms.ToArray();
+			photo = Convert.ToBase64String(byteArray);
+		}
+		catch (Exception ex)
+		{
+			//ConsentHandler.HandleException(ex);
+		}
+	}
+
+	protected async Task<string?> GetPhoto()
+	{
+		string? photo;
+
+		try
+		{
+			using (var photoStream = await GraphServiceClient.Me.Photo.Content.GetAsync())
+			{
+				byte[] photoByte = ((System.IO.MemoryStream)photoStream).ToArray();
+				photo = Convert.ToBase64String(photoByte);
+				this.StateHasChanged();
+			}
+		}
+		catch (Exception)
+		{
+			photo = null;
+		}
+		return photo;
+	}
+
+}

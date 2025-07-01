@@ -1,0 +1,146 @@
+﻿@using Microsoft.Identity.Client
+@inject AuthenticationStateProvider AuthStateProvider
+@inject GraphServiceClient graphServiceClient
+@inject Microsoft.Identity.Web.ITokenAcquisition TokenAcquisition
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<button @onclick="ToggleProfileCard" @onclick:stopPropagation class="profile-btn profile-button">
+    @if (profilePicture != null && profilePicture.Length > 0)
+    {
+        <img src="data:image/jpeg;base64,@profilePicture" class="profile-img nav-profile-picture" />
+    }
+    else
+    {
+        <img src="/BlankProfilePicture.png" class="nav-profile-picture" />
+    }
+</button>
+
+@if (showProfileCard)
+{
+    <div class="profile-card-component">
+        <div class="card shadow profile-popup-card">
+            <div class="card-body">
+                <div class="text-right">
+                    <a href="MicrosoftIdentity/Account/SignOut">Log out</a>
+                </div>
+
+                <div class="user-details-div">
+                    <div>
+                        @if (profilePicture is null)
+                        {
+                            <p><em>Loading...</em></p>
+                        }
+                        else if (profilePicture == string.Empty)
+                        {
+                            <img src="/BlankProfilePicture.png" class="profile-picture" />
+                        }
+                        else
+                        {
+                            <img src="data:image/jpeg;base64,@profilePicture" class="profile-picture" />
+                        }
+                    </div>
+                    <div class="user-description">
+                        @if (user != null)
+                        {
+                            <p class="card-text"> @userName</p>
+                            <p class="card-text">@mailId</p>
+                            <p class="card-text"><strong>Roles: @userRoles</strong></p>
+                        }
+                        else
+                        {
+                            <p class="card-text">Loading...</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+
+    private System.Security.Claims.ClaimsPrincipal? user;
+    string? profilePicture = null;
+    string? userName = null;
+    string? mailId = null;
+    string? userRoles = null;
+    private bool showProfileCard = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            user = authState.User;
+            var claims = user.Claims.Where(c => c.Type == "role" || c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+               .Select(c => c.Value)
+               .Distinct()
+               .ToList();
+
+            userRoles = string.Join(", ", claims);
+
+            var userDetails = await graphServiceClient.Me.GetAsync();
+
+            userName = userDetails?.DisplayName;
+            mailId = userDetails?.Mail;
+
+
+            using (var photoStream = await graphServiceClient.Me.Photo.Content.GetAsync())
+            {
+                if (photoStream != null)
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        await photoStream.CopyToAsync(memoryStream);
+                        profilePicture = Convert.ToBase64String(memoryStream.ToArray());
+                    }
+                }
+            }
+        }
+        catch (MsalUiRequiredException ex)
+        {
+            Console.WriteLine($"{ex.Message}");
+            // Handle the case where silent token acquisition fails
+            // You may redirect user to login or show error
+            // This means silent token acquisition failed and interactive login is needed
+            // Usually, since your app is protected with [Authorize], this should not happen often
+            // You could redirect to login or show a message here
+            Console.WriteLine("Interactive login required to acquire token.");
+        }
+        catch (Microsoft.Identity.Web.MicrosoftIdentityWebChallengeUserException ex)
+        {
+            Console.WriteLine($"{ex.Message}");
+            // Redirect user to interactive login to consent or re-authenticate
+            Navigation.NavigateTo("MicrosoftIdentity/Account/SignIn", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{ex.Message}");
+            profilePicture = string.Empty;
+            userName = string.Empty;
+        }
+    }
+
+    private void ToggleProfileCard()
+    {
+        showProfileCard = !showProfileCard;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Register a global click handler
+            _ = JS.InvokeVoidAsync("registerClickHandler", DotNetObjectReference.Create(this));
+        }
+    }
+
+    [JSInvokable]
+    public void HideProfileCard()
+    {
+        showProfileCard = false;
+        StateHasChanged();
+    }
+}

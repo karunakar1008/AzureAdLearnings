@@ -1,0 +1,90 @@
+﻿@page "/processhistory"
+@inject ExcelProcessStatusService ProcessStatusService
+@inject ProcessManagerService ProcessManager
+@rendermode InteractiveServer
+
+
+<h3>Excel Process History</h3>
+
+<button @onclick="LoadProcesses">Refresh</button>
+
+@if (processes == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!processes.Any())
+{
+    <p>No process history available.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>File Name</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th>Start Time (UTC)</th>
+                <th>End Time (UTC)</th>
+                <th>Error Message</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in processes.OrderByDescending(p => p.StartTime))
+            {
+                <tr>
+                    <td>@p.FileName</td>
+                    <td>@p.Status</td>
+                    <td>@p.Progress %</td>
+                    <td>@p.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@(p.EndTime.HasValue? p.EndTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : "-")</td>
+                    <td style="color:red">@p.ErrorMessage</td>
+                    <td>
+                        @if (p.Status == "Processing")
+                        {
+                            <button class="btn btn-danger btn-sm" @onclick="() => StopProcess(p.ProcessId)">Stop</button>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ExcelProcessStatus>? processes;
+
+    protected override void OnInitialized()
+    {
+        LoadProcesses();
+    }
+
+    private void LoadProcesses()
+    {
+        processes = ProcessStatusService.GetAllProcesses().ToList();
+    }
+
+    private void StopProcess(Guid processId)
+    {
+        bool canceled = ProcessManager.TryCancelProcess(processId);
+
+        if (canceled)
+        {
+            var proc = processes?.FirstOrDefault(p => p.ProcessId == processId);
+            if (proc != null)
+            {
+                proc.Status = "Cancelled";
+            }
+            StateHasChanged();
+        }
+        else
+        {
+            // Optionally show message: process not found or already stopped
+        }
+    }
+}

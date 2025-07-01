@@ -1,0 +1,10 @@
+﻿@page "/admin"
+
+@attribute [Authorize(Roles ="Admin")]
+
+
+<h3>Admin Page</h3>
+<p>This page is accessed only when user has admin role</p>
+@code {
+
+}

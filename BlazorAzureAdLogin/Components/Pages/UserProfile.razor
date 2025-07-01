@@ -1,0 +1,82 @@
+﻿@page "/userprofile"
+@inject Microsoft.Identity.Web.ITokenAcquisition TokenAcquisition
+@using System.Net.Http.Headers
+@using Microsoft.Identity.Client
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+@if (userPhotoBase64 != null)
+{
+    <img src="@userPhotoBase64" alt="User profile picture" style="width:40px; height:40px; border-radius:50%;" />
+}
+else if (loading)
+{
+    <p>Loading profile picture...</p>
+}
+else
+{
+    <p>No profile picture found.</p>
+}
+
+@code {
+    private string? userPhotoBase64;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            try
+            {
+                var accessToken = await TokenAcquisition.GetAccessTokenForUserAsync(new[] { "User.Read" });
+                var photoBytes = await GetUserPhotoAsync(accessToken);
+                if (photoBytes != null)
+                {
+                    userPhotoBase64 = $"data:image/jpeg;base64,{Convert.ToBase64String(photoBytes)}";
+                }
+            }
+            catch (MsalUiRequiredException ex)
+            {
+                // Handle the case where silent token acquisition fails
+                // You may redirect user to login or show error
+                // This means silent token acquisition failed and interactive login is needed
+                // Usually, since your app is protected with [Authorize], this should not happen often
+                // You could redirect to login or show a message here
+                Console.WriteLine("Interactive login required to acquire token.");
+            }
+            catch (Microsoft.Identity.Web.MicrosoftIdentityWebChallengeUserException ex)
+            {
+                // Redirect user to interactive login to consent or re-authenticate
+                Navigation.NavigateTo("MicrosoftIdentity/Account/SignIn", forceLoad: true);
+            }
+            catch (Exception ex)
+            {
+                // Log or handle errors as needed
+                // Handle other errors (network issues, Graph errors, etc)
+                Console.WriteLine($"Error fetching profile picture: {ex.Message}");
+            }
+
+            finally
+            {
+                loading = false;
+
+            }
+        }
+    }
+
+    private async Task<byte[]?> GetUserPhotoAsync(string accessToken)
+    {
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await client.GetAsync("https://graph.microsoft.com/v1.0/me/photo/$value");
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+        return null;
+    }
+}
