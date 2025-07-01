@@ -1,3 +1,4 @@
+using Azure.Identity;
 using BlazorAzureAdLogin.Components;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
@@ -12,6 +13,10 @@ namespace BlazorAzureAdLogin
             var builder = WebApplication.CreateBuilder(args);
 
             var initialScopes = builder.Configuration.GetValue<string>("DownstreamApi:Scopes")?.Split(' ');
+
+            builder.Configuration.AddAzureKeyVault(
+            new Uri($"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/"),
+            new DefaultAzureCredential());
 
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                            .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))
