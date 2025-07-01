@@ -1,10 +1,13 @@
 ﻿@page "/weather"
 @attribute [StreamRendering]
 
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
 <PageTitle>Weather</PageTitle>
 
 <h1>Weather</h1>
-
+<h3>Welcome, @userName!</h3>
 <p>This component demonstrates showing data.</p>
 
 @if (forecasts == null)
@@ -39,8 +42,31 @@ else
 @code {
     private WeatherForecast[]? forecasts;
 
+    private class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public string? Summary { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+
+
+    private string userName;
+
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name; // usually email or UPN
+        }
+        else
+        {
+            userName = "Guest";
+        }
+
         // Simulate asynchronous loading to demonstrate streaming rendering
         await Task.Delay(500);
 
@@ -52,13 +78,5 @@ else
             TemperatureC = Random.Shared.Next(-20, 55),
             Summary = summaries[Random.Shared.Next(summaries.Length)]
         }).ToArray();
-    }
-
-    private class WeatherForecast
-    {
-        public DateOnly Date { get; set; }
-        public int TemperatureC { get; set; }
-        public string? Summary { get; set; }
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
     }
 }

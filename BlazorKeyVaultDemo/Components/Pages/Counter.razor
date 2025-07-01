@@ -1,9 +1,13 @@
 ﻿@page "/counter"
+@using BlazorKeyVaultDemo.Services
 @rendermode InteractiveServer
+@inject KeyVaultService3 KeyVaultService3
 
 <PageTitle>Counter</PageTitle>
 
 <h1>Counter</h1>
+
+<p>Client secret: @clientSecret</p>
 
 <p role="status">Current count: @currentCount</p>
 
@@ -11,9 +15,14 @@
 
 @code {
     private int currentCount = 0;
-
+    private string clientSecret = "";
     private void IncrementCount()
     {
         currentCount++;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        clientSecret = await KeyVaultService3.GetSecretAsync("AzureADClientSecret");
     }
 }
