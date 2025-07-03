@@ -16,6 +16,7 @@ namespace BlazorWasmAppAzureAdLogin
             builder.Services.AddMsalAuthentication(options =>
             {
                 builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+                options.ProviderOptions.DefaultAccessTokenScopes.Add("api://55fc27de-e189-46d9-847c-cc078e044881/access_as_user");
             });
 
             await builder.Build().RunAsync();
