@@ -1,0 +1,63 @@
+﻿@inject IAccessTokenProvider TokenProvider
+@inject NavigationManager Navigation
+
+@if (showExpiryWarning)
+{
+    <div class="alert alert-warning" role="alert">
+        ⚠️ Your session is about to expire in less than 2 minutes.
+        Please save your work or refresh the page.
+        <p>Your session will expire in <strong>@remainingTime</strong> seconds.</p>
+    </div>
+}
+
+@code {
+    private DateTime tokenExpiresUtc;
+    private Timer? _tokenMonitorTimer;
+    private bool showExpiryWarning = false;
+    private TimeSpan remainingTime;
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await TokenProvider.RequestAccessToken();
+
+        if (result.TryGetToken(out var token))
+        {
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token.Value);
+            //tokenExpiresUtc = jwt.ValidTo;
+            tokenExpiresUtc = jwt.ValidTo.AddMinutes(-55); // Fast-forward for testing
+
+            StartTokenMonitor();
+        }
+        else
+        {
+            Navigation.NavigateTo("authentication/login");
+        }
+    }
+
+    private void StartTokenMonitor()
+    {
+        _tokenMonitorTimer = new Timer(CheckTokenExpiry, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+    }
+
+    private void CheckTokenExpiry(object state)
+    {
+        var timeLeft = tokenExpiresUtc - DateTime.UtcNow;
+        remainingTime = timeLeft;
+        if (timeLeft < TimeSpan.FromMinutes(2) && !showExpiryWarning)
+        {
+            showExpiryWarning = true;
+            InvokeAsync(StateHasChanged);
+        }
+
+        if (timeLeft <= TimeSpan.Zero)
+        {
+            _tokenMonitorTimer?.Dispose();
+            Navigation.NavigateTo("authentication/login", forceLoad: true);
+        }
+    }
+
+    public void Dispose()
+    {
+        _tokenMonitorTimer?.Dispose();
+    }
+}

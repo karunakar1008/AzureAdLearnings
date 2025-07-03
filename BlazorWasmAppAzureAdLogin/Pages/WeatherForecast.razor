@@ -1,9 +1,10 @@
-﻿@page "/weather"
-@inject HttpClient Http
+﻿@page "/weatherforecast"
 
 @attribute [Authorize]
-@inject IAccessTokenProvider TokenProvider
-@inject NavigationManager Navigation
+@inject WeatherForecastService ForecastService
+@using BlazorWasmAppAzureAdLogin.Models
+
+@* @inject IHttpClientFactory ClientFactory *@
 <PageTitle>Weather</PageTitle>
 
 <h1>Weather</h1>
@@ -44,21 +45,11 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var tokenResult = await TokenProvider.RequestAccessToken();
-
-        if (tokenResult.TryGetToken(out var token))
-        {
-            Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
-            forecasts = await Http.GetFromJsonAsync<BlazorWasmAppAzureAdLogin.Models.WeatherForecast[]>("https://localhost:7168/WeatherForecast");
-        }
-        else
-        {
-            // Handle no token
-            // Token could not be acquired silently
-            // Usually means the user needs to reauthenticate
-            Navigation.NavigateTo("authentication/login");
-        }
-       // forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
+       // var http = ClientFactory.CreateClient("MyApiClient");
+       //  forecasts = await http.GetFromJsonAsync<BlazorWasmAppAzureAdLogin.Models.WeatherForecast[]>("WeatherForecast");
+        //forecasts = await Http.GetFromJsonAsync<BlazorWasmAppAzureAdLogin.Models.WeatherForecast[]?>("https://localhost:7168/WeatherForecast/");
+         forecasts = await ForecastService.GetForecastsAsync();
+        StateHasChanged();
     }
-
+    
 }
