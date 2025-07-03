@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject ILogger<TokenGetter> logger
 @attribute [Authorize]
+@inject NavigationManager Navigation
 
 <div style="overflow-y: auto;width:850px;">
     @BearerToken
@@ -35,6 +36,7 @@
         else
         {
             // Handle no token
+            Navigation.NavigateTo("authentication/login");
         }
     }
 }
