@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWasmAppAzureAdLogin",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWasmAppAzureAdLogin.API", "BlazorWasmAppAzureAdLogin.API\BlazorWasmAppAzureAdLogin.API.csproj", "{1E95CAF3-3FBE-490E-AD2D-159893B421CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWasmClient", "BlazorWasmClient\BlazorWasmClient.csproj", "{E8B1AE1E-AAF1-4362-B66D-41C3C5D34A7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWasmClient.Api", "BlazorWasmClient.Api\BlazorWasmClient.Api.csproj", "{1874B232-EB9D-4727-9A43-EF7C4F6689BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,14 @@ Global
 		{1E95CAF3-3FBE-490E-AD2D-159893B421CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E95CAF3-3FBE-490E-AD2D-159893B421CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E95CAF3-3FBE-490E-AD2D-159893B421CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8B1AE1E-AAF1-4362-B66D-41C3C5D34A7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8B1AE1E-AAF1-4362-B66D-41C3C5D34A7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8B1AE1E-AAF1-4362-B66D-41C3C5D34A7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8B1AE1E-AAF1-4362-B66D-41C3C5D34A7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1874B232-EB9D-4727-9A43-EF7C4F6689BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1874B232-EB9D-4727-9A43-EF7C4F6689BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1874B232-EB9D-4727-9A43-EF7C4F6689BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1874B232-EB9D-4727-9A43-EF7C4F6689BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

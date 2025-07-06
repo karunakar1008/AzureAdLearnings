@@ -1,0 +1,79 @@
+﻿@page "/server-api-userinfo"
+
+@using System.Security.Claims
+@inject IAccessTokenProvider TokenProvider
+@inject ILogger<Profile> logger
+
+@if (claims == null)
+{
+    <p>Loading claims...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var claim in claims)
+            {
+                <tr>
+                    <td>@claim.Type</td>
+                    <td>@claim.Value</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    string? profilePicture = null;
+    string? userName = null;
+    string? mailId = null;
+    string? userRoles = null;
+    private List<string>? Roles;
+    private IEnumerable<Claim>? claims;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var apiTokenResult = await TokenProvider.RequestAccessToken(
+                new AccessTokenRequestOptions
+                {
+                    Scopes = new[] { "api://55fc27de-e189-46d9-847c-cc078e044881/access_as_user" }
+                });
+
+            if (apiTokenResult.TryGetToken(out var apitoken))
+            {
+                var decodedToken = DecodeJwt(apitoken.Value);
+                claims = decodedToken.Claims;
+
+                userName = decodedToken?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                mailId = decodedToken?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value;
+                Roles = decodedToken?.Claims.Where(c => c.Type == "roles").Select(c => c.Value).ToList();
+                userRoles = string.Join(", ", Roles);
+
+            }
+            else
+            {
+                // Handle the case where the token is not available
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation($"{ex.Message}");
+            profilePicture = string.Empty;
+            userName = string.Empty;
+        }
+
+    }
+    public static JwtSecurityToken DecodeJwt(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        return handler.ReadJwtToken(token);
+    }
+
+}

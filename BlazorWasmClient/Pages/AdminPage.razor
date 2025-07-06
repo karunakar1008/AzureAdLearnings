@@ -1,0 +1,25 @@
+﻿@page "/admin"
+
+@attribute [Authorize(Roles = "Admin")]
+
+
+<h3>Admin-only content</h3>
+@* <AuthorizeView Roles="Admin">
+    <Authorized>
+        <h2>Your identity name: @context.User.Identity.Name</h2>
+        <h4>Claims:</h4>
+        <ul>
+            @foreach (var claim in context.User.Claims)
+            {
+                <li><b>@claim.Type</b>: @claim.Value</li>
+            }
+        </ul>
+    </Authorized>
+    <NotAuthorized>
+        <Unauthorized></Unauthorized>
+    </NotAuthorized>
+</AuthorizeView> *@
+
+@code {
+
+}
