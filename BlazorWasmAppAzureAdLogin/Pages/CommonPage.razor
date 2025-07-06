@@ -1,0 +1,29 @@
+﻿@page "/commonpage"
+@attribute [Authorize(Roles ="Admin,AppUser")]
+
+<h3>Common Page</h3>
+
+<p>This page you are seeing because you are having either of these roles, Admin,AppUser</p>
+
+<AuthorizeView Roles="Admin">
+	<Authorized>
+		<h3>This is admin section</h3>
+	</Authorized>
+	<NotAuthorized>
+		<h3>You are not having role-admin, S0 we are showign this message</h3>
+	</NotAuthorized>
+
+</AuthorizeView>
+
+
+<AuthorizeView Roles="AppUser">
+	<Authorized>
+		<h3>This is user section</h3>
+	</Authorized>
+	<NotAuthorized>
+		<h3>You are not having role- App user, So we are showign this message</h3>
+	</NotAuthorized>
+</AuthorizeView>
+@code {
+
+}

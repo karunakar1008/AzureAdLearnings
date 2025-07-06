@@ -1,0 +1,71 @@
+﻿@page "/idtoken"
+@attribute [Authorize]
+@inject TokenStorageService TokenStorage
+
+<h3>SessionStorage Keys</h3>
+
+@if (storageKeys == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <ul>
+        @foreach (var key in storageKeys)
+        {
+            <li>
+                <code>@key</code>
+                <button class="btn btn-sm btn-primary ms-2" @onclick="() => ReadToken(key)">View</button>
+            </li>
+        }
+    </ul>
+}
+
+@if (!string.IsNullOrWhiteSpace(decodedToken))
+{
+    <h4>Decoded ID Token</h4>
+    <pre>@decodedToken</pre>
+}
+
+@code {
+    List<string>? storageKeys;
+    string? decodedToken;
+
+    protected override async Task OnInitializedAsync()
+    {
+        storageKeys = await TokenStorage.GetAllSessionStorageKeysAsync();
+    }
+
+    async Task ReadToken(string key)
+    {
+        var token = await TokenStorage.GetIdTokenByKeyAsync(key);
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            decodedToken = DecodeJwtPayload(token);
+        }
+    }
+
+    string DecodeJwtPayload(string jwt)
+    {
+        try
+        {
+            var parts = jwt.Split('.');
+            if (parts.Length != 3) return "Invalid JWT";
+
+            var payload = parts[1];
+            var json = System.Text.Encoding.UTF8.GetString(
+                Convert.FromBase64String(PadBase64(payload))
+            );
+            return json;
+        }
+        catch (Exception ex)
+        {
+            return $"Error decoding: {ex.Message}";
+        }
+    }
+
+    static string PadBase64(string input)
+    {
+        return input.PadRight(input.Length + (4 - input.Length % 4) % 4, '=');
+    }
+}

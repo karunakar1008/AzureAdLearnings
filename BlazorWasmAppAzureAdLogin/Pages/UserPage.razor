@@ -1,0 +1,11 @@
+﻿@page "/user"
+@attribute [Authorize(Roles = "AppUser")]
+
+
+<h3>User Page</h3>
+<p>This page is accessed only when user has AppUser role</p>
+
+
+@code {
+
+}

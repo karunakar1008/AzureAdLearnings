@@ -1,0 +1,42 @@
+﻿@page "/gettoken"
+@using System.IdentityModel.Tokens.Jwt
+@inject IAccessTokenProvider TokenProvider
+@inject HttpClient Http
+@inject ILogger<TokenGetter> logger
+@attribute [Authorize]
+@inject NavigationManager Navigation
+
+<div style="overflow-y: auto;width:850px;">
+    @BearerToken
+</div>
+
+<div style="overflow-y: auto;width:850px;">
+    @TokenValidTill
+</div>
+@code {
+
+    public string? BearerToken { get; set; }
+
+    public DateTime TokenValidTill { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        var tokenResult = await TokenProvider.RequestAccessToken();
+
+        if (tokenResult.TryGetToken(out var token))
+        {
+            BearerToken = token.Value;
+            logger.LogInformation("Token:"+token.Value);
+
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token.Value);
+            TokenValidTill = jwt.ValidTo; // UTC time
+
+            logger.LogInformation($"Token expires at: {TokenValidTill}");
+        }
+        else
+        {
+            // Handle no token
+            Navigation.NavigateTo("authentication/login");
+        }
+    }
+}
