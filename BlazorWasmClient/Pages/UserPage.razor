@@ -1,0 +1,18 @@
+﻿@page "/user"
+@attribute [Authorize]
+
+<AuthorizeView Roles="AppUser">
+    <Authorized>
+        <p>User data you are seeing becoz you have user role assigned. </p>
+    </Authorized>
+    <NotAuthorized>
+       @*  <p>This page is accessed only when user has AppUser role</p>
+
+        <p>I'm sorry, I can't display anything until you log in as APp user</p> *@
+        <Unauthorized></Unauthorized>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+}

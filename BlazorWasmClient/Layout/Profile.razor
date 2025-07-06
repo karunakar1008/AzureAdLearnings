@@ -1,0 +1,159 @@
+﻿@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject IAccessTokenProvider TokenProvider
+@inject ILogger<Profile> logger
+
+<button @onclick="ToggleProfileCard" @onclick:stopPropagation class="profile-btn profile-button">
+    @if (profilePicture != null && profilePicture.Length > 0)
+    {
+        <img src="@profilePicture" class="profile-img nav-profile-picture" />
+    }
+    else
+    {
+        <img src="/BlankProfilePicture.png" class="nav-profile-picture" />
+    }
+</button>
+@if (showProfileCard)
+{
+    <div class="profile-card-component">
+        <div class="card shadow profile-popup-card">
+            <div class="card-body">
+                <div class="text-right">
+                    <button class="nav-link btn btn-link" @onclick="BeginLogOut">Log out</button>
+                </div>
+
+                <div class="user-details-div">
+                    <div>
+                        @if (profilePicture is null)
+                        {
+                            <p><em>Loading...</em></p>
+                        }
+                        else if (profilePicture == string.Empty)
+                        {
+                            <img src="/BlankProfilePicture.png" class="profile-picture" />
+                        }
+                        else
+                        {
+                            <img src="@profilePicture" class="profile-picture" />
+                        }
+                    </div>
+                    <div class="user-description">
+                        <p class="card-text"> @userName</p>
+                        <p class="card-text">@mailId</p>
+                        <p class="card-text"><strong>Roles: @userRoles</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    string? profilePicture = null;
+    string? userName = null;
+    string? mailId = null;
+    string? userRoles = null;
+    private List<string>? Roles;
+    private bool showProfileCard = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var idTokenResult = await TokenProvider.RequestAccessToken(
+                new AccessTokenRequestOptions
+                    {
+                        Scopes = new[] { "User.Read" } 
+                    });
+
+            var apiTokenResult = await TokenProvider.RequestAccessToken(
+                new AccessTokenRequestOptions
+                    {
+                        Scopes = new[] { "api://55fc27de-e189-46d9-847c-cc078e044881/access_as_user" } 
+                    });
+
+            if (idTokenResult.TryGetToken(out var token))
+            {
+                var decodedToken = DecodeJwt(token.Value);
+                userName = decodedToken?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                mailId = decodedToken?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value;
+                await FetchProfilePicture(token.Value);
+            }
+            else
+            {
+                // Handle the case where the token is not available
+            }
+
+
+            if (apiTokenResult.TryGetToken(out var apitoken))
+            {
+                var decodedToken = DecodeJwt(apitoken.Value);
+                Roles = decodedToken?.Claims.Where(c => c.Type == "roles").Select(c => c.Value).ToList();
+                userRoles = string.Join(", ", Roles);
+            }
+            else
+            {
+                // Handle the case where the token is not available
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation($"{ex.Message}");
+            profilePicture = string.Empty;
+            userName = string.Empty;
+        }
+
+    }
+
+
+    private async Task FetchProfilePicture(string accessToken)
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var response = await client.GetAsync("https://graph.microsoft.com/v1.0/me/photo/$value");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var imageBytes = await response.Content.ReadAsByteArrayAsync();
+            var base64Image = Convert.ToBase64String(imageBytes);
+            profilePicture = $"data:image/jpeg;base64,{base64Image}";
+        }
+        else
+        {
+            // Handle the case where the profile picture is not available
+        }
+    }
+
+
+    private void ToggleProfileCard()
+    {
+        showProfileCard = !showProfileCard;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _ = JS.InvokeVoidAsync("registerClickHandler", DotNetObjectReference.Create(this));
+        }
+    }
+
+    [JSInvokable]
+    public void HideProfileCard()
+    {
+        showProfileCard = false;
+        StateHasChanged();
+    }
+
+    public static JwtSecurityToken DecodeJwt(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        return handler.ReadJwtToken(token);
+    }
+
+    public void BeginLogOut()
+    {
+        Navigation.NavigateToLogout("authentication/logout");
+    }
+}

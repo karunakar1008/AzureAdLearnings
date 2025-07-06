@@ -1,0 +1,25 @@
+﻿@inject NavigationManager Navigation
+@* @inject AuthenticationStateProvider AuthenticationStateProvider *@
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateTask;
+        if (authState.User.Identity is null || !authState.User.Identity.IsAuthenticated)
+        {
+            var returnUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+            Navigation.NavigateTo($"authentication/login?returnUrl={returnUrl}", true);
+        }
+
+        // var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        // var user = authState.User;
+        // if (authState.User.Identity is null || !authState.User.Identity.IsAuthenticated)
+        // {
+        //     var returnUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+        //     Navigation.NavigateTo($"authentication/login?returnUrl={returnUrl}", true);
+        // }
+    }
+}
