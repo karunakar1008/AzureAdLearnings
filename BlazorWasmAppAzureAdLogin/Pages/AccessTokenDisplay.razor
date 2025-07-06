@@ -1,0 +1,75 @@
+﻿@page "/access-token-display"
+@using System.Text.Json
+@inject IAccessTokenProvider TokenProvider
+
+<h3>Access Token Claims</h3>
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <p style="color:red">@error</p>
+}
+else if (claims.Count > 0)
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Claim Type</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var claim in claims)
+            {
+                <tr>
+                    <td>@claim.Key</td>
+                    <td>@claim.Value</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Loading claims...</p>
+}
+
+@code {
+    private Dictionary<string, object> claims = new();
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await TokenProvider.RequestAccessToken();
+
+        if (result.TryGetToken(out var token))
+        {
+            try
+            {
+                claims = DecodeJwt(token.Value);
+            }
+            catch (Exception ex)
+            {
+                error = $"Failed to decode token: {ex.Message}";
+            }
+        }
+        else
+        {
+            error = "Failed to get access token.";
+        }
+    }
+
+    private Dictionary<string, object> DecodeJwt(string token)
+    {
+        var parts = token.Split('.');
+        if (parts.Length != 3)
+            throw new InvalidOperationException("Invalid JWT format");
+
+        var payload = parts[1];
+        var padded = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
+        var jsonBytes = Convert.FromBase64String(padded);
+        var json = System.Text.Encoding.UTF8.GetString(jsonBytes);
+
+        return JsonSerializer.Deserialize<Dictionary<string, object>>(json)
+               ?? new Dictionary<string, object>();
+    }
+}

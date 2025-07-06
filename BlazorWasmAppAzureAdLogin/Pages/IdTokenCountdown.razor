@@ -1,0 +1,142 @@
+﻿@page "/idtokencountdown"
+
+@using System.Text.Json
+@using System.Text
+@inject IJSRuntime JS
+@implements IDisposable
+<p>Not working</p>
+@if (!string.IsNullOrEmpty(TimeLeft))
+{
+    <div class="toast align-items-center text-white @ToastClass show" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                ⏰ ID Token expires in: <strong>@TimeLeft</strong>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public EventCallback OnExpired { get; set; }
+
+    private string? TimeLeft;
+    private Timer? _timer;
+    private DateTimeOffset? ExpirationTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await JS.InvokeAsync<string>("tokenHelper.getIdToken");
+        if (string.IsNullOrWhiteSpace(token)) return;
+
+        var exp = GetExpirationUnix(token);
+        if (exp.HasValue)
+        {
+            ExpirationTime = DateTimeOffset.FromUnixTimeSeconds(exp.Value);
+            _timer = new Timer(UpdateCountdown, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        }
+    }
+
+    private void UpdateCountdown(object? state)
+    {
+        if (!ExpirationTime.HasValue) return;
+
+        var remaining = ExpirationTime.Value - DateTimeOffset.UtcNow;
+        if (remaining.TotalSeconds <= 0)
+        {
+            TimeLeft = "Expired!";
+            _timer?.Dispose();
+            InvokeAsync(OnExpired.InvokeAsync);
+        }
+        else
+        {
+            TimeLeft = remaining.ToString(@"hh\:mm\:ss");
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+    private int? GetExpirationUnix(string jwt)
+    {
+        try
+        {
+            var parts = jwt.Split('.');
+            if (parts.Length < 2)
+            {
+                Console.WriteLine("Invalid JWT format");
+                return null;
+            }
+
+            string payload = parts[1];
+
+            // Correct padding for Base64
+            int mod = payload.Length % 4;
+            if (mod > 0)
+            {
+                payload += new string('=', 4 - mod);
+            }
+
+            // Convert from Base64Url to Base64
+            payload = payload.Replace('-', '+').Replace('_', '/');
+
+            // Decode
+            var bytes = Convert.FromBase64String(payload);
+            var json = Encoding.UTF8.GetString(bytes);
+
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("exp", out var expElement))
+            {
+                return expElement.GetInt32();
+            }
+            else
+            {
+                Console.WriteLine("No 'exp' claim in token");
+            }
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine($"FormatException: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    public static JsonElement? DecodeJwtPayload(string jwt)
+    {
+        try
+        {
+            var parts = jwt.Split('.');
+            if (parts.Length != 3)
+                return null;
+
+            string payload = parts[1]
+                .Replace('-', '+')
+                .Replace('_', '/');
+
+            // Add correct padding
+            switch (payload.Length % 4)
+            {
+                case 2: payload += "=="; break;
+                case 3: payload += "="; break;
+                case 1: return null; // invalid
+            }
+
+            var bytes = Convert.FromBase64String(payload);
+            return JsonDocument.Parse(bytes).RootElement;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+
+    private string ToastClass =>
+        ExpirationTime.HasValue && (ExpirationTime.Value - DateTimeOffset.UtcNow).TotalMinutes < 5
+            ? "bg-warning"
+            : "bg-primary";
+
+    public void Dispose() => _timer?.Dispose();
+}

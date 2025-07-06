@@ -2,6 +2,7 @@ using BlazorWasmAppAzureAdLogin.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using System.Security.Claims;
 
 namespace BlazorWasmAppAzureAdLogin
 {
@@ -20,11 +21,21 @@ namespace BlazorWasmAppAzureAdLogin
             builder.Services.AddMsalAuthentication(options =>
             {
                 builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
-                //options.ProviderOptions.DefaultAccessTokenScopes.Add("api://55fc27de-e189-46d9-847c-cc078e044881/API.Access");
                 options.ProviderOptions.DefaultAccessTokenScopes.Add("api://55fc27de-e189-46d9-847c-cc078e044881/access_as_user");
-                // Optional: Get roles from token
-                options.UserOptions.RoleClaim = "role";
+                options.UserOptions.RoleClaim = ClaimTypes.Role;
+                options.ProviderOptions.LoginMode = "redirect";
             });
+
+            builder.Services.AddScoped<AccountClaimsPrincipalFactory<RemoteUserAccount>, CustomUserFactory>();
+
+            //builder.Services.AddMsalAuthentication<RemoteAuthenticationState,
+            //CustomUserAccount>(options =>
+            //{
+            //    builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+            //    options.ProviderOptions.DefaultAccessTokenScopes.Add("api://55fc27de-e189-46d9-847c-cc078e044881/access_as_user");
+            //    options.UserOptions.RoleClaim = "appRole";
+            //    options.ProviderOptions.LoginMode = "redirect";
+            //}).AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, CustomUserAccount, CustomAccountFactory>();
 
             builder.Services.AddHttpClient("MyApiClient", client =>
             {
@@ -44,6 +55,8 @@ namespace BlazorWasmAppAzureAdLogin
                 return handler;
             });
 
+            builder.Services.AddScoped<IApiService, ApiService>();
+            builder.Services.AddScoped<TokenStorageService>();
             await builder.Build().RunAsync();
         }
     }

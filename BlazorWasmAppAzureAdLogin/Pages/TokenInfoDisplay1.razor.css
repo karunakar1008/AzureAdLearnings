@@ -1,0 +1,30 @@
+﻿.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050; /* high value to float over everything */
+}
+
+.toast {
+    background-color: #333;
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    min-width: 250px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+    .toast .close-btn {
+        background: transparent;
+        border: none;
+        font-size: 20px;
+        color: #fff;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 5px;
+        margin-left: 15px;
+    }

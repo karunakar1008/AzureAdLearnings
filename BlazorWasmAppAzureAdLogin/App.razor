@@ -2,14 +2,15 @@
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
-                <NotAuthorized>
+                <NotAuthorized Context="context">
                     @if (context.User.Identity?.IsAuthenticated != true)
                     {
                         <RedirectToLogin />
                     }
                     else
                     {
-                        <p role="alert">You are not authorized to access this resource.</p>
+                        <Unauthorized></Unauthorized>
+                        @* <p role="alert">You are not authorized to access this resource.</p> *@
                     }
                 </NotAuthorized>
             </AuthorizeRouteView>

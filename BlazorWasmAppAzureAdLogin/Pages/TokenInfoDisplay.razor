@@ -1,0 +1,125 @@
+﻿@inject IAccessTokenProvider TokenProvider
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+<AuthorizeView>
+    <Authorized>
+        @if (tokenInfoVisible)
+        {
+            <div class="toast-container">
+                <div class="toast">
+                    <strong>Token Info:</strong>
+                    @if (!string.IsNullOrEmpty(UserName))
+                    {
+                        <div class="alert @AlertClass">
+                            <strong>User:</strong> @UserName <br />
+                            <strong>Token Expires At:</strong> @TokenExpiry?.ToLocalTime():HH:mm:ss <br />
+                            <strong>Time Left:</strong> @TimeLeft
+                            @if (ShowWarning)
+                            {
+                                <div class="mt-2 text-warning">
+                                    ⚠️ Your session will expire soon. Please save your work.
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p><em>Loading token info...</em></p>
+                    }
+                    <button class="close-btn" @onclick="HideToast">×</button>
+                </div>
+            </div>
+        }
+    </Authorized>
+</AuthorizeView>
+
+
+
+@code {
+    private string? UserName;
+    private DateTimeOffset? TokenExpiry;
+    private string TimeLeft = "";
+    private bool ShowWarning = false;
+    private string AlertClass = "alert-info";
+
+    private bool tokenInfoVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // var expClaim = user.FindFirst("exp");
+            // if (expClaim != null && long.TryParse(expClaim.Value, out var expSeconds))
+            // {
+            //     // exp claim is in Unix epoch seconds
+            //     TokenExpiry = DateTimeOffset.FromUnixTimeSeconds(expSeconds);
+            // }
+            await LoadTokenInfo();
+            _ = StartCountdownAsync();
+        }
+        else
+        {
+            Navigation.NavigateTo("authentication/login");
+        }
+
+    }
+
+    private async Task LoadTokenInfo()
+    {
+        var result = await TokenProvider.RequestAccessToken();
+
+        if (result.TryGetToken(out var token))
+        {
+            var payload = ParseJwtPayload(token.Value);
+            if (payload.TryGetValue("exp", out var expRaw) && long.TryParse(expRaw, out long expSeconds))
+            {
+                //TokenExpiry = DateTimeOffset.FromUnixTimeSeconds(expSeconds);
+                TokenExpiry = DateTime.UtcNow.AddMinutes(6);
+            }
+            if (payload.TryGetValue("name", out var name))
+            {
+                UserName = name;
+            }
+        }
+    }
+
+    private Dictionary<string, string> ParseJwtPayload(string token)
+    {
+        var parts = token.Split('.');
+        if (parts.Length != 3) return new();
+
+        string base64 = parts[1];
+        base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
+        var bytes = Convert.FromBase64String(base64);
+        var json = System.Text.Json.JsonDocument.Parse(bytes);
+        return json.RootElement.EnumerateObject().ToDictionary(x => x.Name, x => x.Value.ToString());
+    }
+
+    private async Task StartCountdownAsync()
+    {
+        while (true)
+        {
+            if (TokenExpiry.HasValue)
+            {
+                var remaining = TokenExpiry.Value - DateTimeOffset.UtcNow;
+
+                TimeLeft = remaining > TimeSpan.Zero ? remaining.ToString("mm\\:ss") : "Expired";
+                ShowWarning = remaining < TimeSpan.FromMinutes(5) && remaining > TimeSpan.Zero;
+                AlertClass = ShowWarning ? "alert-warning" : "alert-info";
+                tokenInfoVisible = ShowWarning;
+                StateHasChanged();
+            }
+
+            await Task.Delay(1000);
+        }
+    }
+
+    private void HideToast()
+    {
+        tokenInfoVisible = false;
+    }
+}
