@@ -1,6 +1,7 @@
 using Azure.Identity;
 using BlazorAzureAdLogin.Components;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Graph.Models.ExternalConnectors;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 
@@ -23,7 +24,6 @@ namespace BlazorAzureAdLogin
                                .EnableTokenAcquisitionToCallDownstreamApi(initialScopes)
                                      .AddMicrosoftGraph(builder.Configuration.GetSection("DownstreamApi:Scopes"))
                                    .AddInMemoryTokenCaches();
-
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
@@ -64,7 +64,7 @@ namespace BlazorAzureAdLogin
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
-
+            app.MapRazorPages();
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 
