@@ -17,7 +17,7 @@ namespace BlazorAzureAdLogin
 
             builder.Configuration.AddAzureKeyVault(
             new Uri($"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/"),
-            new DefaultAzureCredential());
+            new VisualStudioCredential());
 
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                            .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))

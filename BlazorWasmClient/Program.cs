@@ -1,10 +1,7 @@
 using BlazorWasmClient.Services;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using System.Security.Claims;
 
 namespace BlazorWasmClient
 {
@@ -28,23 +25,34 @@ namespace BlazorWasmClient
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("BlazorWasmClientApi"));
 
 
-            builder.Services.AddMsalAuthentication(options =>
+            //builder.Services.AddMsalAuthentication(options =>
+            //{
+            //    builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+            //    options.ProviderOptions.DefaultAccessTokenScopes.Add("api://55fc27de-e189-46d9-847c-cc078e044881/access_as_user");
+            //    options.ProviderOptions.DefaultAccessTokenScopes.Add("User.Read");
+            //    options.ProviderOptions.DefaultAccessTokenScopes.Add("offline_access");
+            //    options.UserOptions.RoleClaim = ClaimTypes.Role;
+            //    options.ProviderOptions.LoginMode = "redirect";
+            //});
+            //builder.Services.AddScoped<AccountClaimsPrincipalFactory<RemoteUserAccount>, CustomUserFactory>();
+
+
+            builder.Services.AddMsalAuthentication<RemoteAuthenticationState,
+            CustomUserAccount>(options =>
             {
                 builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+
                 options.ProviderOptions.DefaultAccessTokenScopes.Add("api://55fc27de-e189-46d9-847c-cc078e044881/access_as_user");
                 options.ProviderOptions.DefaultAccessTokenScopes.Add("User.Read");
                 options.ProviderOptions.DefaultAccessTokenScopes.Add("offline_access");
-                options.UserOptions.RoleClaim = ClaimTypes.Role;
+                options.UserOptions.RoleClaim = "appRole";
                 options.ProviderOptions.LoginMode = "redirect";
-            });
-
-            builder.Services.AddAuthorizationCore();
-            
-            builder.Services.AddScoped<AccountClaimsPrincipalFactory<RemoteUserAccount>, CustomUserFactory>();
+            }).AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, CustomUserAccount,
+            CustomAccountFactory>();
 
             builder.Services.AddScoped<IApiService, ApiService>();
 
-         
+
             await builder.Build().RunAsync();
         }
     }
