@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWasmClient", "BlazorW
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWasmClient.Api", "BlazorWasmClient.Api\BlazorWasmClient.Api.csproj", "{1874B232-EB9D-4727-9A43-EF7C4F6689BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PCDB.API", "PCDB.API\PCDB.API.csproj", "{651EEB06-A2EF-424F-A658-08B6BA20B4DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{1874B232-EB9D-4727-9A43-EF7C4F6689BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1874B232-EB9D-4727-9A43-EF7C4F6689BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1874B232-EB9D-4727-9A43-EF7C4F6689BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{651EEB06-A2EF-424F-A658-08B6BA20B4DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{651EEB06-A2EF-424F-A658-08B6BA20B4DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{651EEB06-A2EF-424F-A658-08B6BA20B4DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{651EEB06-A2EF-424F-A658-08B6BA20B4DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
