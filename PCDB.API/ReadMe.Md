@@ -152,3 +152,15 @@ Login with your Azure AD credentials.
 Swagger will acquire a token and attach it as a Bearer token for your API requests.
 
 Now you can call your secured endpoints right from Swagger!
+
+    7.Summary
+
+Register your API and client app in Azure AD.
+
+Configure ASP.NET Core 8 with Microsoft Identity Web for JWT Bearer authentication.
+
+Add OAuth2 configuration in Swagger.
+
+Use [Authorize] attribute on your API.
+
+Test secured APIs in Swagger UI with Azure AD login.
